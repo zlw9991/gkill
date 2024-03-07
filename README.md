@@ -13,5 +13,5 @@
 - 4 : Almost Stupid Long Answer
 - 5 : Definitely Stupid Long Long Answer
 
-  ### Usage
-  simply run as ./gkill or add it to your executable directories in export <path> etc.
+### Usage
+Simply run as ./gkill or add it to your executable directories in export <path> etc.
