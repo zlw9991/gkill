@@ -1,0 +1,2 @@
+# gkill
+(guided)kill
