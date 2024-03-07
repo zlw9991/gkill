@@ -1,0 +1,287 @@
+#!/bin/bash
+
+choice=88
+funcres=0
+press_enter(){ #fuction which clears screen
+	echo -en "\n Press Enter to continue."
+	read
+	clear
+}
+
+proclist(){
+
+	yes '' | sed 1q # prints one empty line
+
+	echo "[Running Processes executed in terminal Owned by User]--------------------------"
+	ps -au
+	echo "-----------------------------------------------------------"
+	yes '' | sed 3q #prints 3 empty lines
+	
+}
+
+proclistall(){
+
+	yes '' | sed 1q # prints one empty line
+
+	echo "[Running Processes Owned by User]--------------------------"
+	pgrep -u "$(whoami)" | xargs ps u
+	echo "-----------------------------------------------------------"
+	yes '' | sed 3q #prints 3 empty lines
+	
+}
+
+sigkill(){
+	argl="$@" # passed arguement list to array variable
+	choicep="${argl[0]%% *}" # slice off the first item in the array
+	pidlist=("${argl[@]/$choicep}") # slice the rest of the array off without it's first item
+	pidc=$(echo "$pidlist" | grep -o " " | wc -l) # count number of items
+	funcres=0 #set function result to default 0
+	echo "$choicep"
+	#echo $pidc
+	#echo "${pidlist[0]}"
+	if [ "$choicep" -gt "0" ] && [ "$choicep" -lt "65" ]; then
+		for pvalue in "$pidlist"; do 
+			checkkill=""
+			checkkill=$(kill -"$choicep" $pvalue 2>&1) # '2>&1' means errors are outputted into the exit variable &1, which means it can be stored in checkkill.
+			if [ "$checkkill" != "" ] && [ $(echo "${checkkill}" | wc -l) -eq $pidc ]; then #count if number of lines is same as no. of items in array
+				echo "All processes or pids do not exist/have been terminated!"
+				funcres=255
+			fi
+			
+		done 
+	else
+		echo "No valid Sigterm No. Given!"
+	fi 
+	
+}
+
+
+
+
+while [ "$choice" != "0" ]; do
+	pidkilllist=''
+	echo "Welcome to (Guided)Kill! Follow the Menu below for options!"
+	echo "1) - List Processes owned by current user executed from terminal."
+	echo "2) - List Processes owned by current user."
+	echo "3) - Default Kill Process [SIGTERM]"
+	echo "4) - Pause / Stop Process [SIGSTOP]"
+	echo "5) - Continue Stopped Process [SIGCONT]"
+	echo "6) - Kill Chain 1 [SIGTERM -> 30 Second Pause -> SIGKILL]"
+	echo "7) - Kill Chain 2 [SIGTERM -> SIGINT -> SIGKILL]"
+	echo "8) - Kill Chain 3 [SIGTERM -> SIGINT -> SIGQUIT -> SIGABRT -> SIGKILL]"
+	echo "9) - Kill Chain 4 [SIGTERM -> SIGINT -> SIGHUP -> SIGPIPE -> SIGQUIT -> SIGABRT -> SIGKILL]"
+	echo "10) - Kill Chain 5 [SIGTERM -> SIGINT -> SIGHUP -> SIGPIPE -> SIGQUIT -> SIGABRT -> SIGSEGV -> SIGILL -> SIGFPE -> SIGKILL]"
+	echo "0) - Exit Program."
+	read -p "Input your Choice here: " choice
+	case $choice in
+		1) proclist ;;
+		2) proclistall ;;
+		
+		3) read -p "Enter PID/PIDS to SIGTERM: " -a pidkilllist ; # add clarify read input as array of args
+		   pidkilllist=("15" "${pidkilllist[@]}")  ; # append 15 / SIGTERM to array
+		   sigkill "${pidkilllist[@]}" ; # feed array as function input
+		   press_enter ;; # clear screen
+
+		4) read -p "Enter PID/PIDS to SIGSTOP: " -a pidkilllist ; # add clarify read input as array of args
+		   pidkilllist=("19" "${pidkilllist[@]}")  ; # append 19 / SIGSTOP to array
+		   sigkill "${pidkilllist[@]}" ; # feed array as function input
+		   press_enter ;; # clear screen
+
+		5) read -p "Enter PID/PIDS to SIGCONT: " -a pidkilllist ; # add clarify read input as array of args
+		   pidkilllist=("18" "${pidkilllist[@]}")  ; # append 18 / SIGCONT to array
+		   sigkill "${pidkilllist[@]}" ; # feed array as function input
+		   press_enter ;; # clear screen
+
+		6) read -p "Enter PID/PIDS to SIGTERM -> 30 Second Pause -> SIGKILL: " -a pidkilllist ; # add clarify read input as array of args
+		   echo "[Running SIGTERM...]" ;
+		   temppidkilllist=("15" "${pidkilllist[@]}")  ; # append 15 / SIGTERM to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   sleep 30 ;
+
+		   echo "[Running SIGKILL...]" ;
+		   temppidkilllist=("9" "${pidkilllist[@]}")  ; # append 9 / SIGKILL to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   press_enter ;; # clear screen
+
+		7) read -p "Enter PID/PIDS to SIGTERM -> SIGINT -> SIGKILL: " -a pidkilllist ; # add clarify read input as array of args
+		   echo "[Running SIGTERM...]" ;
+		   temppidkilllist=("15" "${pidkilllist[@]}")  ; # append 15 / SIGTERM to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigint
+		   fi ;
+
+		   echo "[Running SIGINT...]" ;
+		   temppidkilllist=("2" "${pidkilllist[@]}")  ; # append 2 / SIGINT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGKILL...]" ;
+		   temppidkilllist=("9" "${pidkilllist[@]}")  ; # append 9 / SIGKILL to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   press_enter ;; # clear screen
+
+		8) read -p "Enter PID/PIDS to SIGTERM -> SIGINT -> SIGQUIT -> SIGABRT -> SIGKILL: " -a pidkilllist ; # add clarify read input as array of args
+
+		   echo "[Running SIGTERM...]" ;
+		   temppidkilllist=("15" "${pidkilllist[@]}")  ; # append 15 / SIGTERM to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigint
+		   fi ;
+
+		   echo "[Running SIGINT...]" ;
+		   temppidkilllist=("2" "${pidkilllist[@]}")  ; # append 2 / SIGINT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigquit
+		   fi ;
+
+		   echo "[Running SIGQUIT...]" ;
+		   temppidkilllist=("3" "${pidkilllist[@]}")  ; # append 3 / SIGQUIT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGABRT...]" ;
+		   temppidkilllist=("6" "${pidkilllist[@]}")  ; # append 2 / SIGABRT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGKILL...]" ;
+		   temppidkilllist=("9" "${pidkilllist[@]}")  ; # append 9 / SIGKILL to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   press_enter ;; # clear screen
+
+		9) read -p "Enter PID/PIDS to SIGTERM -> SIGINT -> SIGHUP -> SIGPIPE -> SIGQUIT -> SIGABRT -> SIGKILL: " -a pidkilllist ; # add clarify read input as array of args
+		   echo "[Running SIGTERM...]" ;
+		   temppidkilllist=("15" "${pidkilllist[@]}")  ; # append 15 / SIGTERM to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigint
+		   fi ;
+
+		   echo "[Running SIGINT...]" ;
+		   temppidkilllist=("2" "${pidkilllist[@]}")  ; # append 2 / SIGINT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigquit
+		   fi ;
+
+		   echo "[Running SIGHUP...]" ;
+		   temppidkilllist=("1" "${pidkilllist[@]}")  ; # append 1 / SIGHUP to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigquit
+		   fi ;
+
+		   echo "[Running SIGPIPE...]" ;
+		   temppidkilllist=("13" "${pidkilllist[@]}")  ; # append 13 / SIGPIPE to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigquit
+		   fi ;
+
+		   echo "[Running SIGQUIT...]" ;
+		   temppidkilllist=("3" "${pidkilllist[@]}")  ; # append 3 / SIGQUIT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGABRT...]" ;
+		   temppidkilllist=("6" "${pidkilllist[@]}")  ; # append 6 / SIGABRT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGKILL...]" ;
+		   temppidkilllist=("9" "${pidkilllist[@]}")  ; # append 9 / SIGKILL to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   press_enter ;; # clear screen 
+
+		10) read -p "Enter PID/PIDS to SIGTERM -> SIGINT -> SIGHUP -> SIGPIPE -> SIGQUIT -> SIGABRT -> SIGSEGV -> SIGILL -> SIGFPE -> SIGKILL: " -a pidkilllist ; # add clarify read input as array of args
+
+		   echo "[Running SIGTERM...]" ;
+		   temppidkilllist=("15" "${pidkilllist[@]}")  ; # append 15 / SIGTERM to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigint
+		   fi ;
+
+		   echo "[Running SIGINT...]" ;
+		   temppidkilllist=("2" "${pidkilllist[@]}")  ; # append 2 / SIGINT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigquit
+		   fi ;
+
+		   echo "[Running SIGHUP...]" ;
+		   temppidkilllist=("1" "${pidkilllist[@]}")  ; # append 1 / SIGHUP to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigquit
+		   fi ;
+
+		   echo "[Running SIGPIPE...]" ;
+		   temppidkilllist=("13" "${pidkilllist[@]}")  ; # append 13 / SIGPIPE to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigquit
+		   fi ;
+
+		   echo "[Running SIGQUIT...]" ;
+		   temppidkilllist=("3" "${pidkilllist[@]}")  ; # append 3 / SIGQUIT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGABRT...]" ;
+		   temppidkilllist=("6" "${pidkilllist[@]}")  ; # append 6 / SIGABRT to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGSEGV...]" ;
+		   temppidkilllist=("11" "${pidkilllist[@]}")  ; # append 11 / SIGSEGV to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGILL...]" ;
+		   temppidkilllist=("4" "${pidkilllist[@]}")  ; # append 4 / SIGILL to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGFPE...]" ;
+		   temppidkilllist=("8" "${pidkilllist[@]}")  ; # append 8 / SIGFPE to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   if [ "$funcres" -eq "255" ]; then
+		   continue ; # continue case as the pids have been terminated and no longer need to be run thru sigkill
+		   fi ;
+
+		   echo "[Running SIGKILL...]" ;
+		   temppidkilllist=("9" "${pidkilllist[@]}")  ; # append 9 / SIGKILL to array
+		   sigkill "${temppidkilllist[@]}" ; # feed array as function input
+		   press_enter ;; # clear screen 
+
+		0) exit ;;
+		*) echo "Enter a valid choice!" ; press_enter ;;
+	
+	esac
+done
